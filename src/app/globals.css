@@ -1,0 +1,236 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  color-scheme: dark;
+  --radius: 0.75rem;
+
+  /* ── Midnight Garage palette ─────────────────────────── */
+  --bg: #08090B;
+  --surface: #15171B;
+  --surface-hover: #202329;
+  --border-color: #292D33;
+  --text-primary: #F2F4F7;
+  --text-secondary: #A5ADB8;
+  --accent-red: #C62828;
+  --accent-red-hover: #E03131;
+
+  /* shadcn token mapping */
+  --background: #08090B;
+  --foreground: #F2F4F7;
+  --card: #15171B;
+  --card-foreground: #F2F4F7;
+  --popover: #15171B;
+  --popover-foreground: #F2F4F7;
+  --primary: #C62828;
+  --primary-foreground: #FFFFFF;
+  --secondary: #202329;
+  --secondary-foreground: #F2F4F7;
+  --muted: #1B1E23;
+  --muted-foreground: #A5ADB8;
+  --accent: #202329;
+  --accent-foreground: #F2F4F7;
+  --destructive: #E03131;
+  --border: #292D33;
+  --input: #292D33;
+  --ring: #F2F4F7;
+  --chart-1: #C62828;
+  --chart-2: #E03131;
+  --chart-3: #A5ADB8;
+  --chart-4: #F2F4F7;
+  --chart-5: #7A1219;
+  --sidebar: #101216;
+  --sidebar-foreground: #F2F4F7;
+  --sidebar-primary: #C62828;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #202329;
+  --sidebar-accent-foreground: #F2F4F7;
+  --sidebar-border: #292D33;
+  --sidebar-ring: #F2F4F7;
+}
+
+/* Dark-only app: .dark mirrors :root */
+.dark {
+  color-scheme: dark;
+  --background: #08090B;
+  --foreground: #F2F4F7;
+  --card: #15171B;
+  --card-foreground: #F2F4F7;
+  --popover: #15171B;
+  --popover-foreground: #F2F4F7;
+  --primary: #C62828;
+  --primary-foreground: #FFFFFF;
+  --secondary: #202329;
+  --secondary-foreground: #F2F4F7;
+  --muted: #1B1E23;
+  --muted-foreground: #A5ADB8;
+  --accent: #202329;
+  --accent-foreground: #F2F4F7;
+  --destructive: #E03131;
+  --border: #292D33;
+  --input: #292D33;
+  --ring: #F2F4F7;
+  --sidebar: #101216;
+  --sidebar-foreground: #F2F4F7;
+  --sidebar-primary: #C62828;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #202329;
+  --sidebar-accent-foreground: #F2F4F7;
+  --sidebar-border: #292D33;
+  --sidebar-ring: #F2F4F7;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ── Glass panels over the photo background ─────────────── */
+.glass {
+  background: rgba(21, 23, 27, 0.78);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  border: 1px solid rgba(41, 45, 51, 0.9);
+}
+
+.glass-strong {
+  background: rgba(16, 18, 22, 0.88);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  border: 1px solid rgba(41, 45, 51, 0.9);
+}
+
+.text-dim {
+  color: var(--text-secondary);
+}
+
+.bg-overlay {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* ── Custom scrollbars ──────────────────────────────────── */
+.nice-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #292d33 transparent;
+}
+.nice-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.nice-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nice-scroll::-webkit-scrollbar-thumb {
+  background-color: #292d33;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.nice-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #3a3f47;
+}
+
+/* ── Chat markdown tweaks ───────────────────────────────── */
+.chat-md code {
+  background: rgba(32, 35, 41, 0.9);
+  border: 1px solid #292d33;
+  border-radius: 6px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.85em;
+  font-family: var(--font-geist-mono), monospace;
+}
+.chat-md pre {
+  background: rgba(8, 9, 11, 0.85);
+  border: 1px solid #292d33;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  font-size: 0.85em;
+}
+.chat-md pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+.chat-md table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 0.9em;
+}
+.chat-md th,
+.chat-md td {
+  border: 1px solid #292d33;
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+}
+.chat-md th {
+  background: rgba(32, 35, 41, 0.6);
+}
+.chat-md a {
+  color: #e03131;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.chat-md ul {
+  list-style: disc;
+  padding-left: 1.4rem;
+  margin: 0.4rem 0;
+}
+.chat-md ol {
+  list-style: decimal;
+  padding-left: 1.4rem;
+  margin: 0.4rem 0;
+}
+.chat-md blockquote {
+  border-left: 3px solid #c62828;
+  padding-left: 0.8rem;
+  color: #a5adb8;
+  margin: 0.5rem 0;
+}

@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  username      String         @unique
+  password      String
+  settings      Settings?
+  documents     Document[]
+  conversations Conversation[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Settings {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // LLM provider: "api" (OpenAI-compatible endpoint) | "ollama" (local)
+  llmProvider    String   @default("built-in")
+  apiBaseUrl     String   @default("https://integrate.api.nvidia.com/v1")
+  apiKey         String   @default("")
+  apiModel       String   @default("meta/llama-3.3-70b-instruct")
+  ollamaBaseUrl  String   @default("http://localhost:11434")
+  ollamaModel    String   @default("llama3.1")
+  // Embeddings provider: "api" | "ollama"
+  embeddingProvider String @default("built-in")
+  embeddingApiBaseUrl String @default("")
+  embeddingApiKey String  @default("")
+  embeddingModel String   @default("nomic-embed-text")
+  // OCR
+  ocrEnabled     Boolean  @default(false)
+  ocrEngine      String   @default("glm") // "glm" (GLM-OCR via Ollama) | "paddle" (PaddleOCR local ONNX)
+  glmModel       String   @default("glm-ocr")
+  updatedAt      DateTime @updatedAt
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  size       Int      @default(0)
+  pages      Int      @default(0)
+  chunkCount Int      @default(0)
+  status     String   @default("processing") // processing | ready | error
+  error      String?
+  createdAt  DateTime @default(now())
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String    @default("New chat")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String // user | assistant
+  content        String
+  sources        String? // JSON: [{docId, docName, page, score}]
+  createdAt      DateTime     @default(now())
+}
