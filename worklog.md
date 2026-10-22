@@ -115,3 +115,17 @@ Work Log:
 
 Stage Summary:
 - All golden paths browser-verified. App ready. Test account: testrider / garage123 (demo data).
+
+---
+Task ID: fix-1
+Agent: main (Z.ai)
+Task: Restore missing src/lib/local-embeddings.ts (vanished from sandbox; user's local copy also lacked it)
+
+Work Log:
+- Detected src/lib/local-embeddings.ts missing again despite prior fix (no git repo; external cleanup likely)
+- Recreated module: hashEmbed (feature hashing, FNV-1a, 256-dim, unigrams+bigrams, L2-normalized) + BUILTIN_EMBED_META
+- Verified /api/documents -> 401, /api/auth/me -> 401 (compile OK), lint clean
+
+Stage Summary:
+- File: src/lib/local-embeddings.ts (EMBED_DIM=256, model "hashed-ngrams-256-v1")
+- User runs locally with npm: provided full file content + env notes (DATABASE_URL relative path gotcha)
