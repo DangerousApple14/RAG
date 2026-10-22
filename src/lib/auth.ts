@@ -44,18 +44,19 @@ export function verifyPassword(password: string, stored: string): boolean {
 }
 
 /* ── JWT session ───────────────────────────────────────────── */
-export async function createSessionToken(userId: string): Promise<string> {
-  return new SignJWT({ sub: userId })
+export async function createSessionToken(userId: string, epoch: number): Promise<string> {
+  return new SignJWT({ sub: userId, epoch })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_DAYS}d`)
     .sign(getSecret());
 }
 
-async function userIdFromToken(token: string): Promise<string | null> {
+async function payloadFromToken(token: string): Promise<{ sub: string; epoch: number } | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());
-    return typeof payload.sub === "string" ? payload.sub : null;
+    if (typeof payload.sub !== "string") return null;
+    return { sub: payload.sub, epoch: typeof payload.epoch === "number" ? payload.epoch : -1 };
   } catch {
     return null;
   }
@@ -65,20 +66,30 @@ export async function getCurrentUser() {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const userId = await userIdFromToken(token);
-  if (!userId) return null;
+  const payload = await payloadFromToken(token);
+  if (!payload) return null;
   try {
-    return await db.user.findUnique({ where: { id: userId } });
+    const user = await db.user.findUnique({ where: { id: payload.sub } });
+    // epoch mismatch = revoked (account deleted, password reset, logout-everywhere)
+    if (!user || user.sessionEpoch !== payload.epoch) return null;
+    return user;
   } catch {
     return null;
   }
+}
+
+/** Invalidate every outstanding session for a user (call after security events). */
+export async function bumpSessionEpoch(userId: string): Promise<void> {
+  const user = await db.user.findUnique({ where: { id: userId }, select: { sessionEpoch: true } });
+  if (!user) return;
+  await db.user.update({ where: { id: userId }, data: { sessionEpoch: user.sessionEpoch + 1 } });
 }
 
 export function attachSessionCookie(response: NextResponse, token: string): NextResponse {
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: false, // local app
+    secure: process.env.NODE_ENV === "production" && process.env.ALLOW_INSECURE_COOKIES !== "1",
     path: "/",
     maxAge: 60 * 60 * 24 * SESSION_DAYS,
   });

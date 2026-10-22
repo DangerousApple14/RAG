@@ -10,7 +10,12 @@ datasource db {
 model User {
   id            String         @id @default(cuid())
   username      String         @unique
-  password      String
+  password      String // scrypt hash (salt:hash) — never plaintext
+  // bumped to invalidate all existing JWT sessions (logout-everywhere / security events)
+  sessionEpoch  Int            @default(0)
+  // legal: accepted Terms of Service version (null = registered pre-ToS)
+  tosAcceptedAt DateTime?
+  tosVersion    String?
   settings      Settings?
   documents     Document[]
   conversations Conversation[]

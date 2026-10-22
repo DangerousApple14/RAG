@@ -18,6 +18,7 @@ import { Toaster as SonnerToaster } from '@/components/ui/sonner'
 import { AuthScreen } from '@/components/rag/auth-screen'
 import { BackgroundLayer } from '@/components/rag/background-layer'
 import { ChatPanel, type UiMessage } from '@/components/rag/chat-panel'
+import { LegalViewer } from '@/components/rag/legal-viewer'
 import { SettingsDialog } from '@/components/rag/settings-dialog'
 import { Sidebar } from '@/components/rag/sidebar'
 import {
@@ -83,6 +84,7 @@ export function AppRoot() {
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [legalDoc, setLegalDoc] = useState<'terms' | 'privacy' | null>(null)
 
   const abortRef = useRef<AbortController | null>(null)
 
@@ -445,6 +447,17 @@ export function AppRoot() {
     setMessages([])
   }, [stopStream])
 
+  /** After account erasure the session is already gone server-side. */
+  const handleAccountDeleted = useCallback(() => {
+    stopStream()
+    setUser(null)
+    setSettings(null)
+    setDocuments([])
+    setConversations([])
+    setActiveId(null)
+    setMessages([])
+  }, [stopStream])
+
   /* ── render ─────────────────────────────────────────────────── */
   const sidebar = (
     <Sidebar
@@ -471,7 +484,7 @@ export function AppRoot() {
         authChecking ? (
           <BootScreen />
         ) : (
-          <AuthScreen onAuthed={handleAuthed} />
+          <AuthScreen onAuthed={handleAuthed} onOpenLegal={setLegalDoc} />
         )
       ) : (
         <div className="flex min-h-svh flex-col">
@@ -547,7 +560,28 @@ export function AppRoot() {
           </main>
 
           <footer className="glass-strong mt-auto shrink-0 border-t border-border/70 px-4 py-2 text-center text-[11px] text-dim">
-            Midnight Garage · local-first RAG — PDFs, OCR &amp; LLM keys never leave this machine
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
+              <span>
+                Midnight Garage · local-first RAG — PDFs, OCR &amp; LLM keys never leave this
+                machine
+              </span>
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                className="underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                onClick={() => setLegalDoc('terms')}
+              >
+                Terms
+              </button>
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                className="underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                onClick={() => setLegalDoc('privacy')}
+              >
+                Privacy
+              </button>
+            </div>
           </footer>
 
           {/* Mobile sidebar drawer */}
@@ -577,9 +611,19 @@ export function AppRoot() {
             onOpenChange={setSettingsOpen}
             settings={settings}
             onSaved={handleSettingsSaved}
+            username={user.username}
+            onAccountDeleted={handleAccountDeleted}
           />
         </div>
       )}
+
+      <LegalViewer
+        open={legalDoc !== null}
+        onOpenChange={(o) => {
+          if (!o) setLegalDoc(null)
+        }}
+        initial={legalDoc ?? 'terms'}
+      />
 
       <SonnerToaster theme="dark" position="bottom-right" richColors closeButton />
     </>

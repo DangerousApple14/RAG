@@ -1,6 +1,7 @@
 import "server-only";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "fs";
 import path from "path";
+import { encryptText, decryptText } from "@/lib/crypto";
 
 /**
  * Minimal, dependency-free vector index persisted as JSON per user.
@@ -35,8 +36,13 @@ function filePath(userId: string) {
 function load(userId: string): StoreData {
   try {
     if (existsSync(filePath(userId))) {
-      const data = JSON.parse(readFileSync(filePath(userId), "utf8")) as StoreData;
-      if (Array.isArray(data.items)) return data;
+      // file is encrypted at rest (AES-256-GCM); legacy plaintext files are
+      // still readable and get re-encrypted on the next persist
+      const raw = decryptText(readFileSync(filePath(userId), "utf8"));
+      if (raw !== null) {
+        const data = JSON.parse(raw) as StoreData;
+        if (Array.isArray(data.items)) return data;
+      }
     }
   } catch {
     // corrupted file → start fresh
@@ -47,7 +53,7 @@ function load(userId: string): StoreData {
 function persist(userId: string, data: StoreData) {
   mkdirSync(VECTORS_DIR, { recursive: true });
   const tmp = `${filePath(userId)}.tmp-${process.pid}-${Date.now()}`;
-  writeFileSync(tmp, JSON.stringify(data));
+  writeFileSync(tmp, encryptText(JSON.stringify(data)));
   renameSync(tmp, filePath(userId));
 }
 

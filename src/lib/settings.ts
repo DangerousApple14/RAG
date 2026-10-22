@@ -1,10 +1,24 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { encryptText, decryptText, decryptTextSafe } from "@/lib/crypto";
 
+/* Secrets are stored AES-256-GCM encrypted; in-memory copies are plaintext
+   for calling the configured endpoints; API responses carry masked previews
+   only — raw keys never travel back to the client. */
+
+const SECRET_FIELDS = ["apiKey", "embeddingApiKey"] as const;
+
+/** Decrypt secret fields for internal (server-side) use. */
 export async function getOrCreateSettings(userId: string) {
   const existing = await db.settings.findUnique({ where: { userId } });
-  if (existing) return existing;
-  return db.settings.create({ data: { userId } });
+  const settings = existing ?? (await db.settings.create({ data: { userId } }));
+
+  const out = { ...settings } as Record<string, unknown>;
+  for (const field of SECRET_FIELDS) {
+    const value = out[field];
+    out[field] = typeof value === "string" && value !== "" ? decryptTextSafe(value, "") : "";
+  }
+  return out as typeof settings;
 }
 
 const PROVIDERS = new Set(["api", "ollama", "built-in"]);
@@ -31,12 +45,10 @@ export async function updateSettings(userId: string, body: Record<string, unknow
 
   for (const key of [
     "apiBaseUrl",
-    "apiKey",
     "apiModel",
     "ollamaBaseUrl",
     "ollamaModel",
     "embeddingApiBaseUrl",
-    "embeddingApiKey",
     "embeddingModel",
     "glmModel",
   ] as const) {
@@ -44,10 +56,17 @@ export async function updateSettings(userId: string, body: Record<string, unknow
     if (v !== undefined) data[key] = v;
   }
 
-  // Explicitly empty overrides mean "clear me → fall back to Model tab credentials"
-  for (const key of ["embeddingApiBaseUrl", "embeddingApiKey"] as const) {
-    if (body[key] === null || body[key] === "" || data[key] === "") data[key] = "";
-  }
+  /* API keys — secrets-safe update semantics:
+     - non-empty string → replace (stored encrypted)
+     - empty/undefined  → keep current (never wipe a key by re-saving the form)
+     - explicit clear flag → wipe                                        */
+  const apiKey = str("apiKey");
+  if (apiKey) data.apiKey = encryptText(apiKey);
+  if (body.clearApiKey === true) data.apiKey = "";
+
+  const embeddingApiKey = str("embeddingApiKey");
+  if (embeddingApiKey) data.embeddingApiKey = encryptText(embeddingApiKey);
+  if (body.clearEmbeddingApiKey === true) data.embeddingApiKey = "";
 
   if (typeof body.ocrEnabled === "boolean") data.ocrEnabled = body.ocrEnabled;
 
@@ -57,24 +76,36 @@ export async function updateSettings(userId: string, body: Record<string, unknow
   if (typeof data.embeddingApiBaseUrl === "string")
     data.embeddingApiBaseUrl = (data.embeddingApiBaseUrl as string).replace(/\/+$/, "");
 
-  return db.settings.update({ where: { userId }, data });
+  await db.settings.update({ where: { userId }, data });
+  // re-read so the response contains decrypted (maskable) values
+  return getOrCreateSettings(userId);
+}
+
+function maskKey(value: string): { has: boolean; preview: string } {
+  if (!value) return { has: false, preview: "" };
+  return { has: true, preview: `••••${value.slice(-4)}` };
 }
 
 export function publicSettings(s: Awaited<ReturnType<typeof getOrCreateSettings>>) {
+  const apiKey = maskKey(s.apiKey);
+  const embeddingApiKey = maskKey(s.embeddingApiKey);
   return {
     llmProvider: s.llmProvider,
     apiBaseUrl: s.apiBaseUrl,
-    apiKey: s.apiKey,
     apiModel: s.apiModel,
     ollamaBaseUrl: s.ollamaBaseUrl,
     ollamaModel: s.ollamaModel,
     embeddingProvider: s.embeddingProvider,
     embeddingApiBaseUrl: s.embeddingApiBaseUrl,
-    embeddingApiKey: s.embeddingApiKey,
     embeddingModel: s.embeddingModel,
     ocrEnabled: s.ocrEnabled,
     ocrEngine: s.ocrEngine,
     glmModel: s.glmModel,
+    // masked secrets — raw keys never leave the server
+    hasApiKey: apiKey.has,
+    apiKeyPreview: apiKey.preview,
+    hasEmbeddingApiKey: embeddingApiKey.has,
+    embeddingApiKeyPreview: embeddingApiKey.preview,
   };
 }
 

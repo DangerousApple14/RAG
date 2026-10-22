@@ -4,6 +4,7 @@ import { getCurrentUser, unauthorized } from "@/lib/auth";
 import { getOrCreateSettings } from "@/lib/settings";
 import { getChatModel, getEmbeddings, embedMetaKey, friendlyLlmError } from "@/lib/llm";
 import { getChunkCount, getEmbedMeta, search } from "@/lib/vector-store";
+import { encryptText, decryptTextSafe } from "@/lib/crypto";
 import {
   AIMessage,
   HumanMessage,
@@ -59,20 +60,22 @@ export async function POST(req: NextRequest) {
     }
   } else {
     conversation = await db.conversation.create({
-      data: { userId: user.id, title: message.slice(0, 60) },
+      data: { userId: user.id, title: encryptText(message.slice(0, 60)) },
     });
   }
+  const conversationTitle = decryptTextSafe(conversation.title, "New chat");
 
   const settings = await getOrCreateSettings(user.id);
 
-  // History BEFORE the new message + persist the new user message
-  const history = await db.message.findMany({
+  // History BEFORE the new message + persist the new user message (content is
+  // encrypted at rest; decrypt for the model context)
+  const history = (await db.message.findMany({
     where: { conversationId: conversation.id },
     orderBy: { createdAt: "asc" },
-  });
+  })).map((m) => ({ ...m, content: decryptTextSafe(m.content, "") }));
   const trimmed = history.slice(-HISTORY_TURNS);
   await db.message.create({
-    data: { conversationId: conversation.id, role: "user", content: message },
+    data: { conversationId: conversation.id, role: "user", content: encryptText(message) },
   });
 
   const stream = new ReadableStream<Uint8Array>({
@@ -85,7 +88,7 @@ export async function POST(req: NextRequest) {
         }
       };
 
-      send({ type: "meta", conversationId: conversation.id, title: conversation.title });
+      send({ type: "meta", conversationId: conversation.id, title: conversationTitle });
 
       let assistantText = "";
       try {
@@ -154,8 +157,8 @@ export async function POST(req: NextRequest) {
           data: {
             conversationId: conversation.id,
             role: "assistant",
-            content: assistantText || "(empty response)",
-            sources: sources.length > 0 ? JSON.stringify(sources) : null,
+            content: encryptText(assistantText || "(empty response)"),
+            sources: sources.length > 0 ? encryptText(JSON.stringify(sources)) : null,
           },
         });
         await db.conversation.update({

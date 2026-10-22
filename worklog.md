@@ -129,3 +129,27 @@ Work Log:
 Stage Summary:
 - File: src/lib/local-embeddings.ts (EMBED_DIM=256, model "hashed-ngrams-256-v1")
 - User runs locally with npm: provided full file content + env notes (DATABASE_URL relative path gotcha)
+
+---
+Task ID: harden-1
+Agent: main (Z.ai)
+Task: Commercial-readiness hardening — encryption at rest, auth hardening, rate limiting, ToS/Privacy, GDPR erasure, security headers
+
+Work Log:
+- crypto.ts: AES-256-GCM (enc:v1.<iv>.<tag>.<ct>), APP_SECRET env or auto-generated db/app-secret.key; legacy plaintext passthrough for migration
+- rate-limit.ts: in-memory fixed-window limiter (register 5/10min, login 10/5min, chat 30/min, docs 20/10min, del-acct 5/10min)
+- schema: User += sessionEpoch, tosAcceptedAt, tosVersion (db:push OK)
+- auth: JWT embeds session epoch (revocable sessions), register min 8 chars + ToS gate, generic login errors, cookie secure in prod
+- /api/account DELETE: password-confirmed full erasure (DB cascade + vector file)
+- settings: apiKey/embeddingApiKey encrypted at rest; API responses masked (hasApiKey + ••••last4); empty=keep semantics + clear flags
+- chat/conversations: message content, sources JSON, conversation titles encrypted at rest
+- vector-store: whole-file encryption of per-user index JSON
+- legal.ts (ToS v1.0 + Privacy, [PLACEHOLDERS] for operator), legal-viewer.tsx in-app dialog
+- auth-screen: ToS checkbox gate + legal links; footer Terms/Privacy buttons
+- settings-dialog: 4th Account tab — masked keys, Remove key buttons, danger zone w/ AlertDialog erase flow
+- next.config: X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy, CSP
+
+Stage Summary:
+- Browser E2E verified: register w/ ToS gate, legal viewer tabs, masked key save/keep, chat stream + encrypted round-trip, wrong-password 403, account erase 200 -> auth screen, 429 rate limit live
+- DB inspection: message/title/apiKey rows = enc:v1.…; GET responses contain no raw keys
+- NOTE: register rate limit 5/10min may 429 during heavy testing — restart dev server to reset buckets

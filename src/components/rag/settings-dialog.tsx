@@ -1,9 +1,20 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Check, Cpu, Globe, Loader2, Sparkles, X } from 'lucide-react'
+import { Check, Cpu, Globe, Loader2, ShieldAlert, Sparkles, UserCircle2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PasswordInput } from '@/components/rag/password-input'
 import {
   ApiError,
+  deleteAccount,
   getCapabilities,
   getSettings,
   updateSettings,
@@ -46,39 +58,52 @@ interface SettingsDialogProps {
   /** Last known settings (used for instant prefill while re-fetching). */
   settings: Settings | null
   onSaved: (settings: Settings) => void
+  username: string
+  /** Fired after the account has been erased — flips the UI to the auth screen. */
+  onAccountDeleted: () => void
 }
 
 interface SettingsForm {
   llmProvider: LlmProvider
   apiBaseUrl: string
-  apiKey: string
   apiModel: string
   ollamaBaseUrl: string
   ollamaModel: string
   embeddingProvider: EmbeddingProvider
   embeddingApiBaseUrl: string
-  embeddingApiKey: string
   embeddingModel: string
   ocrEnabled: boolean
   ocrEngine: OcrEngine
   glmModel: string
+  // new-key entry fields — empty means "keep the stored key"
+  newApiKey: string
+  newEmbeddingApiKey: string
+  // masked info about stored keys
+  hasApiKey: boolean
+  apiKeyPreview: string
+  hasEmbeddingApiKey: boolean
+  embeddingApiKeyPreview: string
 }
 
 /** Matches the documented backend defaults. */
 const DEFAULT_FORM: SettingsForm = {
   llmProvider: 'built-in',
   apiBaseUrl: 'https://integrate.api.nvidia.com/v1',
-  apiKey: '',
   apiModel: 'meta/llama-3.3-70b-instruct',
   ollamaBaseUrl: 'http://localhost:11434',
   ollamaModel: 'llama3.1',
   embeddingProvider: 'built-in',
   embeddingApiBaseUrl: '',
-  embeddingApiKey: '',
   embeddingModel: 'nomic-embed-text',
   ocrEnabled: true,
   ocrEngine: 'glm',
   glmModel: 'glm-ocr',
+  newApiKey: '',
+  newEmbeddingApiKey: '',
+  hasApiKey: false,
+  apiKeyPreview: '',
+  hasEmbeddingApiKey: false,
+  embeddingApiKeyPreview: '',
 }
 
 function Field(props: { label: string; htmlFor?: string; hint?: string; children: React.ReactNode }) {
@@ -94,28 +119,42 @@ function Field(props: { label: string; htmlFor?: string; hint?: string; children
 
 function applyServerSettings(server: Settings): SettingsForm {
   return {
+    ...DEFAULT_FORM,
     llmProvider: server.llmProvider ?? 'built-in',
     apiBaseUrl: server.apiBaseUrl ?? DEFAULT_FORM.apiBaseUrl,
-    apiKey: server.apiKey ?? '',
     apiModel: server.apiModel ?? DEFAULT_FORM.apiModel,
     ollamaBaseUrl: server.ollamaBaseUrl ?? DEFAULT_FORM.ollamaBaseUrl,
     ollamaModel: server.ollamaModel ?? DEFAULT_FORM.ollamaModel,
     embeddingProvider: server.embeddingProvider ?? 'built-in',
     embeddingApiBaseUrl: server.embeddingApiBaseUrl ?? '',
-    embeddingApiKey: server.embeddingApiKey ?? '',
     embeddingModel: server.embeddingModel ?? DEFAULT_FORM.embeddingModel,
     ocrEnabled: server.ocrEnabled ?? true,
     ocrEngine: server.ocrEngine ?? 'glm',
     glmModel: server.glmModel ?? DEFAULT_FORM.glmModel,
+    hasApiKey: server.hasApiKey ?? false,
+    apiKeyPreview: server.apiKeyPreview ?? '',
+    hasEmbeddingApiKey: server.hasEmbeddingApiKey ?? false,
+    embeddingApiKeyPreview: server.embeddingApiKeyPreview ?? '',
   }
 }
 
-/** Glass "Garage settings" dialog — Model | Embeddings | OCR tabs. */
-export function SettingsDialog({ open, onOpenChange, settings, onSaved }: SettingsDialogProps) {
+/** Glass "Garage settings" dialog — Model | Embeddings | OCR | Account tabs. */
+export function SettingsDialog({
+  open,
+  onOpenChange,
+  settings,
+  onSaved,
+  username,
+  onAccountDeleted,
+}: SettingsDialogProps) {
   const [form, setForm] = useState<SettingsForm>(DEFAULT_FORM)
   const [caps, setCaps] = useState<Capabilities | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  // account deletion
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   // Load fresh settings + capabilities every time the dialog opens.
   useEffect(() => {
@@ -125,6 +164,7 @@ export function SettingsDialog({ open, onOpenChange, settings, onSaved }: Settin
     if (settings) setForm(applyServerSettings(settings)) // instant prefill
     setLoading(true)
     setCaps(null)
+    setConfirmPassword('')
 
     getSettings()
       .then((res) => {
@@ -156,24 +196,25 @@ export function SettingsDialog({ open, onOpenChange, settings, onSaved }: Settin
       const res = await updateSettings({
         llmProvider: form.llmProvider,
         apiBaseUrl: form.apiBaseUrl.trim(),
-        apiKey: form.apiKey.trim(),
         apiModel: form.apiModel.trim(),
         ollamaBaseUrl: form.ollamaBaseUrl.trim(),
         ollamaModel: form.ollamaModel.trim(),
         embeddingProvider: form.embeddingProvider,
         embeddingApiBaseUrl: form.embeddingApiBaseUrl.trim() || null,
-        embeddingApiKey: form.embeddingApiKey.trim() || null,
         embeddingModel: form.embeddingModel.trim(),
         ocrEnabled: form.ocrEnabled,
         ocrEngine: form.ocrEngine,
         glmModel: form.glmModel.trim(),
+        // non-empty replaces, empty keeps — the server refuses to wipe keys on empty
+        apiKey: form.newApiKey.trim() || undefined,
+        embeddingApiKey: form.newEmbeddingApiKey.trim() || undefined,
       })
       toast.success('Settings saved')
       onSaved(res.settings)
+      setForm(applyServerSettings(res.settings))
       onOpenChange(false)
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        // AppRoot handles global 401 via its own refreshes; still inform locally.
         toast.error('Session expired — log in again')
       } else {
         toast.error(err instanceof ApiError ? err.message : 'Failed to save settings')
@@ -182,6 +223,44 @@ export function SettingsDialog({ open, onOpenChange, settings, onSaved }: Settin
       setSaving(false)
     }
   }, [form, onOpenChange, onSaved])
+
+  const clearStoredKey = useCallback(
+    async (which: 'apiKey' | 'embeddingApiKey') => {
+      try {
+        const res = await updateSettings(
+          which === 'apiKey'
+            ? { clearApiKey: true }
+            : { clearEmbeddingApiKey: true },
+        )
+        setForm(applyServerSettings(res.settings))
+        onSaved(res.settings)
+        toast.success('Key removed')
+      } catch (err) {
+        toast.error(err instanceof ApiError ? err.message : 'Failed to remove key')
+      }
+    },
+    [onSaved],
+  )
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (!confirmPassword) {
+      toast.error('Enter your password to confirm')
+      return
+    }
+    setDeleting(true)
+    try {
+      await deleteAccount(confirmPassword)
+      toast('Account deleted — all data erased')
+      setConfirmPassword('')
+      onAccountDeleted()
+      onOpenChange(false)
+    } catch (err) {
+      // keep the typed password so a retry is one click away
+      toast.error(err instanceof ApiError ? err.message : 'Failed to delete account')
+    } finally {
+      setDeleting(false)
+    }
+  }, [confirmPassword, onAccountDeleted, onOpenChange])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -204,9 +283,12 @@ export function SettingsDialog({ open, onOpenChange, settings, onSaved }: Settin
             <TabsTrigger value="ocr" className="flex-1">
               OCR
             </TabsTrigger>
+            <TabsTrigger value="account" className="flex-1">
+              Account
+            </TabsTrigger>
           </TabsList>
 
-          {/* ── Model ─────────────────────────────────────────────── */}
+          {/* ── Model ─────────────────────────────────────── */}
           <TabsContent value="model" className="space-y-4">
             <RadioGroup
               value={form.llmProvider}
@@ -294,15 +376,36 @@ export function SettingsDialog({ open, onOpenChange, settings, onSaved }: Settin
                     spellCheck={false}
                   />
                 </Field>
-                <Field label="API key" htmlFor="api-key" hint="stored only in your local SQLite">
-                  <PasswordInput
-                    id="api-key"
-                    value={form.apiKey}
-                    onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
-                    placeholder="nvapi-… or sk-…"
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
+                <Field
+                  label="API key"
+                  htmlFor="api-key"
+                  hint={
+                    form.hasApiKey
+                      ? `Saved key ${form.apiKeyPreview} — leave empty to keep it (stored encrypted)`
+                      : 'Stored encrypted in your local database — never sent anywhere else'
+                  }
+                >
+                  <div className="flex gap-2">
+                    <PasswordInput
+                      id="api-key"
+                      value={form.newApiKey}
+                      onChange={(e) => setForm((f) => ({ ...f, newApiKey: e.target.value }))}
+                      placeholder={form.hasApiKey ? 'leave empty to keep current key' : 'nvapi-… or sk-…'}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                    {form.hasApiKey ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 self-stretch"
+                        onClick={() => void clearStoredKey('apiKey')}
+                      >
+                        Remove
+                      </Button>
+                    ) : null}
+                  </div>
                 </Field>
                 <Field label="Model" htmlFor="api-model">
                   <Input
@@ -341,7 +444,7 @@ export function SettingsDialog({ open, onOpenChange, settings, onSaved }: Settin
             )}
           </TabsContent>
 
-          {/* ── Embeddings ────────────────────────────────────────── */}
+          {/* ── Embeddings ────────────────────────────────── */}
           <TabsContent value="embeddings" className="space-y-4">
             <Field label="Embedding provider">
               <Select
@@ -389,16 +492,37 @@ export function SettingsDialog({ open, onOpenChange, settings, onSaved }: Settin
                 <Field
                   label="API key override"
                   htmlFor="emb-api-key"
-                  hint="empty = use the Model tab credentials"
+                  hint={
+                    form.hasEmbeddingApiKey
+                      ? `Saved key ${form.embeddingApiKeyPreview} — leave empty to keep it`
+                      : 'empty = use the Model tab credentials'
+                  }
                 >
-                  <PasswordInput
-                    id="emb-api-key"
-                    value={form.embeddingApiKey}
-                    onChange={(e) => setForm((f) => ({ ...f, embeddingApiKey: e.target.value }))}
-                    placeholder="nvapi-… or sk-…"
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
+                  <div className="flex gap-2">
+                    <PasswordInput
+                      id="emb-api-key"
+                      value={form.newEmbeddingApiKey}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, newEmbeddingApiKey: e.target.value }))
+                      }
+                      placeholder={
+                        form.hasEmbeddingApiKey ? 'leave empty to keep current key' : 'nvapi-… or sk-…'
+                      }
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                    {form.hasEmbeddingApiKey ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 self-stretch"
+                        onClick={() => void clearStoredKey('embeddingApiKey')}
+                      >
+                        Remove
+                      </Button>
+                    ) : null}
+                  </div>
                 </Field>
                 <Field label="Embedding model" htmlFor="emb-model">
                   <Input
@@ -427,7 +551,7 @@ export function SettingsDialog({ open, onOpenChange, settings, onSaved }: Settin
             )}
           </TabsContent>
 
-          {/* ── OCR ───────────────────────────────────────────────── */}
+          {/* ── OCR ───────────────────────────────────────── */}
           <TabsContent value="ocr" className="space-y-4">
             <div className="flex items-center justify-between gap-4 rounded-xl border p-3">
               <div className="min-w-0">
@@ -520,10 +644,81 @@ export function SettingsDialog({ open, onOpenChange, settings, onSaved }: Settin
               )}
             </div>
           </TabsContent>
+
+          {/* ── Account ───────────────────────────────────── */}
+          <TabsContent value="account" className="space-y-4">
+            <div className="flex items-center gap-3 rounded-xl border p-4">
+              <UserCircle2 className="size-9 text-primary" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{username}</p>
+                <p className="text-xs text-muted-foreground">
+                  Keys, chats and the search index live on this machine — encrypted at rest.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-destructive/40 p-4">
+              <div className="flex items-start gap-2.5">
+                <ShieldAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
+                <div>
+                  <p className="text-sm font-medium text-destructive">Danger zone</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Permanently delete your account — settings, chats, messages, document records
+                    and the encrypted search index. This is immediate and cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <PasswordInput
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="confirm your password"
+                autoComplete="current-password"
+                aria-label="Confirm password to delete account"
+              />
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" disabled={!confirmPassword}>
+                    Delete account forever
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="glass-strong rounded-xl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This erases everything tied to{' '}
+                      <span className="font-medium text-foreground">{username}</span> — settings,
+                      all chats, document records and the encrypted search index. There is no undo
+                      and no backup.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep my account</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-white hover:bg-destructive/90"
+                      disabled={deleting}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        void handleDeleteAccount()
+                      }}
+                    >
+                      {deleting ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                          Erasing…
+                        </>
+                      ) : (
+                        'Yes, erase everything'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </TabsContent>
         </Tabs>
 
         <div className="flex items-center justify-between gap-3 border-t pt-4">
-          <p className="text-[11px] text-dim">Keys live in your local SQLite — never uploaded.</p>
+          <p className="text-[11px] text-dim">Keys are encrypted at rest — never shown or uploaded.</p>
           <Button onClick={handleSave} disabled={saving || loading} className="min-w-32">
             {saving ? (
               <>

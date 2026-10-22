@@ -18,6 +18,7 @@ export class ApiError extends Error {
 export interface User {
   id: string
   username: string
+  tosVersion?: string | null
 }
 
 export type LlmProvider = 'api' | 'ollama' | 'built-in'
@@ -28,20 +29,40 @@ export interface Settings {
   id?: string
   llmProvider: LlmProvider
   apiBaseUrl: string
-  apiKey: string
   apiModel: string
   ollamaBaseUrl: string
   ollamaModel: string
   embeddingProvider: EmbeddingProvider
   embeddingApiBaseUrl: string | null
-  embeddingApiKey: string | null
   embeddingModel: string
   ocrEnabled: boolean
   ocrEngine: OcrEngine
   glmModel: string
+  // secrets arrive masked — raw keys never leave the server
+  hasApiKey: boolean
+  apiKeyPreview: string
+  hasEmbeddingApiKey: boolean
+  embeddingApiKeyPreview: string
 }
 
-export type SettingsPatch = Partial<Omit<Settings, 'id'>>
+/** Keys: omit = keep current, non-empty string = replace, clear flag = wipe. */
+export interface SettingsPatch {
+  llmProvider?: LlmProvider
+  apiBaseUrl?: string
+  apiModel?: string
+  ollamaBaseUrl?: string
+  ollamaModel?: string
+  embeddingProvider?: EmbeddingProvider
+  embeddingApiBaseUrl?: string | null
+  embeddingModel?: string
+  ocrEnabled?: boolean
+  ocrEngine?: OcrEngine
+  glmModel?: string
+  apiKey?: string
+  embeddingApiKey?: string | null
+  clearApiKey?: boolean
+  clearEmbeddingApiKey?: boolean
+}
 
 export type DocumentStatus = 'processing' | 'ready' | 'error'
 
@@ -172,10 +193,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 /* ── Auth ───────────────────────────────────────────────────────────────── */
 
-export async function register(username: string, password: string): Promise<{ user: User }> {
+export async function register(
+  username: string,
+  password: string,
+  acceptedToS: boolean,
+): Promise<{ user: User }> {
   return request<{ user: User }>('/api/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, acceptedToS }),
   })
 }
 
@@ -192,6 +217,14 @@ export async function logout(): Promise<{ ok: boolean }> {
 
 export async function me(): Promise<{ user: User }> {
   return request<{ user: User }>('/api/auth/me')
+}
+
+/** Permanent, irreversible account erasure (requires password re-confirmation). */
+export async function deleteAccount(password: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>('/api/account', {
+    method: 'DELETE',
+    body: JSON.stringify({ password }),
+  })
 }
 
 /* ── Settings ───────────────────────────────────────────────────────────── */
