@@ -18,7 +18,6 @@ export class ApiError extends Error {
 export interface User {
   id: string
   username: string
-  tosVersion?: string | null
 }
 
 export type LlmProvider = 'api' | 'ollama' | 'built-in'
@@ -193,14 +192,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 /* ── Auth ───────────────────────────────────────────────────────────────── */
 
-export async function register(
-  username: string,
-  password: string,
-  acceptedToS: boolean,
-): Promise<{ user: User }> {
+export async function register(username: string, password: string): Promise<{ user: User }> {
   return request<{ user: User }>('/api/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ username, password, acceptedToS }),
+    body: JSON.stringify({ username, password }),
   })
 }
 

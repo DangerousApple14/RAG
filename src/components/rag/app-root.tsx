@@ -18,7 +18,6 @@ import { Toaster as SonnerToaster } from '@/components/ui/sonner'
 import { AuthScreen } from '@/components/rag/auth-screen'
 import { BackgroundLayer } from '@/components/rag/background-layer'
 import { ChatPanel, type UiMessage } from '@/components/rag/chat-panel'
-import { LegalViewer } from '@/components/rag/legal-viewer'
 import { SettingsDialog } from '@/components/rag/settings-dialog'
 import { Sidebar } from '@/components/rag/sidebar'
 import {
@@ -84,7 +83,6 @@ export function AppRoot() {
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [legalDoc, setLegalDoc] = useState<'terms' | 'privacy' | null>(null)
 
   const abortRef = useRef<AbortController | null>(null)
 
@@ -484,7 +482,7 @@ export function AppRoot() {
         authChecking ? (
           <BootScreen />
         ) : (
-          <AuthScreen onAuthed={handleAuthed} onOpenLegal={setLegalDoc} />
+          <AuthScreen onAuthed={handleAuthed} />
         )
       ) : (
         <div className="flex min-h-svh flex-col">
@@ -565,21 +563,9 @@ export function AppRoot() {
                 Midnight Garage · document search, OCR &amp; source references
               </span>
               <span aria-hidden="true">·</span>
-              <button
-                type="button"
-                className="underline-offset-2 transition-colors hover:text-foreground hover:underline"
-                onClick={() => setLegalDoc('terms')}
-              >
-                Terms
-              </button>
-              <span aria-hidden="true">·</span>
-              <button
-                type="button"
-                className="underline-offset-2 transition-colors hover:text-foreground hover:underline"
-                onClick={() => setLegalDoc('privacy')}
-              >
-                Privacy
-              </button>
+              <span>
+                Made with love, I think, by ApplePie/DangerousApple/SR
+              </span>
             </div>
           </footer>
 
@@ -615,14 +601,6 @@ export function AppRoot() {
           />
         </div>
       )}
-
-      <LegalViewer
-        open={legalDoc !== null}
-        onOpenChange={(o) => {
-          if (!o) setLegalDoc(null)
-        }}
-        initial={legalDoc ?? 'terms'}
-      />
 
       <SonnerToaster theme="dark" position="bottom-right" richColors closeButton />
     </>

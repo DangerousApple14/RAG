@@ -173,3 +173,18 @@ Date: 2025-10-29
 **Verified:** lint clean; / 200, /api/health 200, auth-guarded routes 401 unauth; browser E2E — register with ToS checkbox ✓, chat round-trip (built-in LLM, 200 in 4s, markdown+KaTeX render) ✓, Terms/Privacy dialogs ✓, mobile viewport ✓, footer sticky ✓. No docker daemon in sandbox → Dockerfile validated statically (glibc/libgomp/standalone/prisma boot flow).
 
 **User next steps:** `docker build --platform linux/amd64 -t applepieee/rag_demo:latest .` → `docker login -u applepieee` → `docker push …` → Render "Existing image" + env vars (DATABASE_URL=file:/var/data/custom.db, DATA_DIR=/var/data, APP_SECRET) + 1GB disk at /var/data + health path /api/health. See DEPLOY.md.
+
+---
+
+## Task ID: ui-2 — Remove ToS/Privacy Policy entirely, add credit box (user request)
+
+Date: 2025-10-29
+
+- DELETED src/lib/legal.ts + src/components/rag/legal-viewer.tsx (Terms/Privacy docs + viewer).
+- auth-screen.tsx: removed ToS consent checkbox, acceptedToS state/validation, Terms/Privacy buttons, onOpenLegal prop; added credit box under the form: "Made with love, I think, by ApplePie/DangerousApple/SR".
+- app-root.tsx: removed LegalViewer import/state/render; footer Terms/Privacy buttons replaced by the same credit line.
+- api/auth/[action]/route.ts: removed acceptedToS gate + tosAcceptedAt/tosVersion writes + /me fields.
+- api-client.ts: register() no longer sends acceptedToS; User type dropped tosVersion.
+- prisma/schema.prisma: dropped User.tosAcceptedAt/tosVersion; db:push applied (column drop, --accept-data-loss). NOTE: dev server restart was required to pick up the regenerated Prisma client (stale client caused one transient 500 on register).
+- Verified: lint clean; register flow works with no checkbox (200), footer shows credit, no Terms/Privacy anywhere in src/, no console errors.
+- Deploy note: no Dockerfile change needed — boot-time `prisma db push` applies the column drop on Render; local machines just run `npm run db:push` once.

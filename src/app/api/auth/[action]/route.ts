@@ -12,7 +12,6 @@ import {
 } from "@/lib/auth";
 import { getOrCreateSettings } from "@/lib/settings";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-import { TERMS_VERSION } from "@/lib/legal";
 
 const USERNAME_RE = /^[a-zA-Z0-9_.-]{3,32}$/;
 const MAX_PASSWORD_LEN = 128;
@@ -43,7 +42,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
     return badRequest("Unknown auth action");
   }
 
-  let body: { username?: string; password?: string; acceptedToS?: boolean };
+  let body: { username?: string; password?: string };
   try {
     body = await req.json();
   } catch {
@@ -61,12 +60,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
   }
 
   if (action === "register") {
-    // Commercial-grade minimum + legal acceptance gate
+    // Commercial-grade password minimum
     if (password.length < 8) {
       return badRequest("Password must be at least 8 characters");
-    }
-    if (body.acceptedToS !== true) {
-      return badRequest("You must accept the Terms of Service and Privacy Policy");
     }
 
     const existing = await db.user.findUnique({ where: { username } });
@@ -76,8 +72,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
       data: {
         username,
         password: hashPassword(password),
-        tosAcceptedAt: new Date(),
-        tosVersion: TERMS_VERSION,
       },
     });
     await getOrCreateSettings(user.id);
@@ -113,8 +107,6 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ action: st
     user: {
       id: user.id,
       username: user.username,
-      tosVersion: user.tosVersion,
-      tosAcceptedAt: user.tosAcceptedAt,
     },
   });
 }
