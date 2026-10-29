@@ -4,6 +4,7 @@ import path from "path";
 import { db } from "@/lib/db";
 import { getCurrentUser, verifyPassword, clearSessionCookie, unauthorized } from "@/lib/auth";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { VECTORS_DIR } from "@/lib/paths";
 
 /**
  * DELETE /api/account — full account erasure (GDPR Art. 17 style).
@@ -33,7 +34,7 @@ export async function DELETE(req: NextRequest) {
 
   // remove the per-user vector index file (extracted document text)
   try {
-    const vectorFile = path.join(process.cwd(), "db", "vectors", `${user.id}.json`);
+    const vectorFile = path.join(VECTORS_DIR, `${user.id}.json`);
     if (existsSync(vectorFile)) unlinkSync(vectorFile);
   } catch {
     // non-fatal: DB rows are gone, an orphan file is just disk residue

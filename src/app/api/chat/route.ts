@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
               "\n\n(NOTE: the knowledge base was indexed with a different embedding model than the current settings, so document context was not used for this answer. Re-upload documents or restore the previous embedding settings to use RAG.)";
           } else {
             const queryVector = await embeddings.embedQuery(message);
-            const { hits } = search(user.id, queryVector, RAG_K, RAG_MIN_SCORE);
+            const { hits } = search(user.id, queryVector, RAG_K, RAG_MIN_SCORE, message);
             contextBlocks = hits.map(
               (h, i) => `[${i + 1}] ${h.docName} · page ${h.page}\n${h.text}`
             );
@@ -120,9 +120,11 @@ export async function POST(req: NextRequest) {
         const systemParts = [
           "You are Midnight Garage, a sharp and dependable document assistant.",
           contextBlocks.length > 0
-            ? "Answer the user's question using the CONTEXT below. Cite sources inline like [1], [2]. If the context is insufficient, say so plainly and then answer from general knowledge, clearly separated."
-            : "No documents are currently indexed for this conversation — answer from general knowledge.",
-          "Use clean markdown. Be concise but complete.",
+            ? "Answer the user's question using relevant information from the CONTEXT below. Cite sources inline like [1], [2]. If the context is insufficient, say so plainly and then answer from general knowledge, clearly separated."
+            : total > 0
+              ? "Documents are indexed, but no passages could be matched to this question. Do not claim that no documents are indexed; answer from general knowledge and ask the user to clarify which document or topic they mean."
+              : "No documents are currently indexed — answer from general knowledge.",
+          "Use clean markdown. Write inline math as $...$ and display equations as $$...$$. Be concise but complete.",
         ];
         if (retrievalNote) systemParts.push(retrievalNote.trim());
 

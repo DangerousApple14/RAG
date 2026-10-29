@@ -20,7 +20,11 @@ export async function ocrWithGlm(
   model: string
 ): Promise<string> {
   const { Ollama } = await import("ollama");
-  const client = new Ollama({ host: ollamaBaseUrl });
+  const client = new Ollama({
+    host: ollamaBaseUrl,
+    fetch: (input, init) =>
+      fetch(input, { ...init, signal: AbortSignal.timeout(180_000) }),
+  });
   const response = await client.chat(
     {
       model: model || "glm-ocr",
@@ -31,8 +35,7 @@ export async function ocrWithGlm(
           images: [image.toString("base64")],
         },
       ],
-    },
-    { signal: AbortSignal.timeout(180_000) }
+    }
   );
   const text = response?.message?.content?.trim();
   if (!text) throw new Error("GLM-OCR returned empty output");

@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
+import rehypeKatex from 'rehype-katex'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
 import {
   AlertTriangle,
-  Bot,
   Car,
   FileText,
   Loader2,
@@ -44,9 +46,9 @@ interface ChatPanelProps {
 }
 
 const HINTS = [
-  { icon: Upload, text: 'Upload PDFs & images into the knowledge base' },
-  { icon: MessageSquare, text: 'Ask anything — answers stream in live' },
-  { icon: FileText, text: 'Every answer cites its sources, page by page' },
+  { icon: Upload, text: 'Add PDFs and images' },
+  { icon: MessageSquare, text: 'Ask a question in plain language' },
+  { icon: FileText, text: 'Follow answers back to the source page' },
 ] as const
 
 function LoadingRows() {
@@ -76,26 +78,29 @@ function EmptyState({ settings }: { settings: Settings | null }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
-      className="flex flex-col items-center gap-6 py-10 text-center"
+      className="flex flex-col items-center gap-6 py-12 text-center"
     >
-      <div className="flex size-24 items-center justify-center rounded-full border-2 border-primary/50 bg-primary/10 shadow-lg shadow-primary/10">
-        <Car className="size-12 text-primary" aria-hidden="true" />
+      <div className="flex size-12 items-center justify-center rounded-md border border-border bg-card text-primary">
+        <FileText className="size-5" aria-hidden="true" />
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Feed the beast.</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Drop documents in the garage, then ask them anything.
+        <p className="mb-2 text-[10px] font-medium tracking-[0.16em] text-primary uppercase">
+          Your workspace
+        </p>
+        <h2 className="text-2xl font-medium tracking-tight">Start with your documents.</h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+          Add a few files, then ask a question. Answers include references back to the source.
         </p>
       </div>
 
-      <div className="w-full max-w-sm space-y-2 text-left">
+      <div className="w-full max-w-sm divide-y divide-border border-y border-border text-left">
         {HINTS.map((hint) => (
           <div
             key={hint.text}
-            className="glass flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs text-muted-foreground"
+            className="flex items-center gap-3 px-2 py-3 text-xs text-muted-foreground"
           >
-            <hint.icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+            <hint.icon className="size-4 shrink-0 text-dim" aria-hidden="true" />
             <span>{hint.text}</span>
           </div>
         ))}
@@ -142,8 +147,8 @@ function MessageRow({ message: m }: { message: UiMessage }) {
       transition={{ duration: 0.18, ease: 'easeOut' }}
       className="flex items-start gap-3"
     >
-      <div className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-md border border-primary/30 bg-primary/15 text-primary">
-        <Bot className="size-4" aria-hidden="true" />
+      <div className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-md border border-border bg-card text-primary">
+      <FileText className="size-3.5" aria-hidden="true" />
       </div>
 
       <div
@@ -166,7 +171,9 @@ function MessageRow({ message: m }: { message: UiMessage }) {
           <>
             {m.content ? (
               <div className="chat-md min-w-0 break-words text-sm leading-relaxed">
-                <ReactMarkdown>{m.content}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                  {m.content}
+                </ReactMarkdown>
               </div>
             ) : null}
 
@@ -206,7 +213,7 @@ function MessageRow({ message: m }: { message: UiMessage }) {
   )
 }
 
-/** Main chat column: message list + glass input bar with send/stop. */
+/** Main chat column: message list + input bar with send/stop. */
 export function ChatPanel({
   messages,
   loading,
@@ -267,13 +274,13 @@ export function ChatPanel({
 
       <div className="shrink-0 border-t border-border/70">
         <div className="mx-auto w-full max-w-3xl p-3 sm:p-4">
-          <div className="glass-strong flex items-end gap-2 rounded-2xl p-2">
+          <div className="glass-strong flex items-end gap-2 rounded-md p-2">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={1}
-              placeholder="Ask the garage anything…"
+              placeholder="Ask a question about your documents…"
               aria-label="Chat message"
               className="nice-scroll max-h-40 min-h-11 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
             />

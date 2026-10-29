@@ -52,3 +52,8 @@ prompt
 server.log
 # Skills directory
 /skills/
+# ── runtime secrets & user data (NEVER commit these) ──
+/db/
+/prisma/db/
+/data/
+*.key

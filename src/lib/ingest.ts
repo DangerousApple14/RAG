@@ -69,8 +69,8 @@ async function pdfPages(buffer: Buffer, settings: Settings): Promise<PageText[]>
 }
 
 function pathToStandardFonts(): string {
-  // pdf.js requires the trailing slash on this URL
-  return path.join(process.cwd(), "node_modules", "pdfjs-dist", "standard_fonts") + path.sep;
+  // pdf.js checks for a forward slash, including on Windows.
+  return `${path.join(process.cwd(), "node_modules", "pdfjs-dist", "standard_fonts").replace(/\\/g, "/")}/`;
 }
 
 type PdfDocument = {

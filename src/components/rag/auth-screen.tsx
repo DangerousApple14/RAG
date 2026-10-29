@@ -20,7 +20,7 @@ interface AuthScreenProps {
 
 type Mode = 'login' | 'register'
 
-/** Centered glass auth card — Login / Register against the local backend. */
+/** Login / Register against the local backend. */
 export function AuthScreen({ onAuthed, onOpenLegal }: AuthScreenProps) {
   const [mode, setMode] = useState<Mode>('login')
   const [username, setUsername] = useState('')
@@ -74,18 +74,17 @@ export function AuthScreen({ onAuthed, onOpenLegal }: AuthScreenProps) {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="glass w-full max-w-sm rounded-xl p-6 shadow-2xl"
+        className="glass w-full max-w-sm rounded-md p-6 shadow-xl shadow-black/20"
       >
         <div className="mb-6 space-y-3 text-center">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+          <div className="mx-auto flex size-11 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Car className="size-6" aria-hidden="true" />
           </div>
           <div>
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-primary" aria-hidden="true" />
-            <h1 className="text-xl font-bold tracking-[0.18em]">
+            <h1 className="text-lg font-semibold tracking-[0.11em]">
               MIDNIGHT <span className="text-primary">GARAGE</span>
             </h1>
-            <p className="mt-1.5 text-xs text-dim">local RAG · your keys never leave this machine</p>
+            <p className="mt-2 text-sm text-dim">A private place for your documents.</p>
           </div>
         </div>
 

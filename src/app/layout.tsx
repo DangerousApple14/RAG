@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
@@ -15,10 +16,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Midnight Garage · RAG",
-  description:
-    "A dark-themed local RAG chatbot: feed it countless PDFs, pick your OCR engine and your LLM brain.",
+  description: "A private workspace for searching documents and tracing answers back to their sources.",
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/favicon.svg",
   },
 };
 

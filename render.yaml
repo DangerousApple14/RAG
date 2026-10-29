@@ -1,0 +1,31 @@
+# Render Blueprint — optional. You can instead create the Web Service by
+# hand in the dashboard ("Existing image" → docker.io/applepieee/rag_demo:latest).
+#
+# With this file: Render Dashboard → New + → Blueprint → point it at this repo.
+#
+# NOTE: persistent disks require a paid instance (Starter or above).
+# On the Free plan, remove the `disk:` block and accept that all data
+# (accounts, chats, documents) is wiped on every restart/redeploy.
+services:
+  - type: web
+    name: rag-demo
+    runtime: image
+    image:
+      url: docker.io/applepieee/rag_demo:latest
+    plan: starter
+    region: frankfurt # EU region (closest to Germany) — change if you like
+    healthCheckPath: /api/health
+    autoDeploy: false # redeploy manually: dashboard → Manual Deploy → Deploy latest image
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+      - key: DATABASE_URL
+        value: file:/var/data/custom.db
+      - key: APP_SECRET
+        generateValue: true # 32 random hex chars, generated once by Render
+      - key: ALLOW_INSECURE_COOKIES
+        value: "0"
+    disk:
+      name: rag-data
+      mountPath: /var/data
+      sizeGB: 1

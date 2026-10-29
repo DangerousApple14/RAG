@@ -63,7 +63,7 @@ export function LegalViewer({ open, onOpenChange, initial = 'terms' }: LegalView
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="glass-strong nice-scroll flex max-h-[90vh] flex-col rounded-xl sm:max-w-2xl">
+      <DialogContent className="glass-strong nice-scroll flex max-h-[90vh] flex-col rounded-md sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Legal</DialogTitle>
           <DialogDescription>

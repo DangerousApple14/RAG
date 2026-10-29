@@ -1,0 +1,36 @@
+# ── never bake secrets / local state into the image ──────────────
+.git
+.env
+.env.*
+!.env.example
+db
+prisma/db
+data
+*.key
+
+# ── local build artifacts ─────────────────────────────────────────
+node_modules
+.next
+*.tsbuildinfo
+next-env.d.ts
+server.log
+dev.log
+*.log
+
+# ── sandbox / workspace clutter ───────────────────────────────────
+upload
+download
+tests
+mini-services
+examples
+.zscripts
+skills
+Caddyfile
+worklog.md
+*.zip
+bun.lock
+Dockerfile
+.dockerignore
+render.yaml
+DEPLOY.md
+README*

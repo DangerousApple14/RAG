@@ -119,7 +119,7 @@ export function Sidebar({
       {/* ── Chats ──────────────────────────────────────────────────── */}
       <div className="flex shrink-0 flex-col border-b border-border/70">
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <h2 className="text-[11px] font-semibold tracking-[0.14em] uppercase text-dim">Chats</h2>
+          <h2 className="text-xs font-medium text-dim">Chats</h2>
           <span className="text-[10px] text-dim">{conversations.length}</span>
         </div>
 
@@ -138,7 +138,7 @@ export function Sidebar({
               <Skeleton className="h-10 w-full rounded-lg" />
             </div>
           ) : conversations.length === 0 ? (
-            <p className="px-3 py-3 text-xs text-dim">No chats yet — hit New chat.</p>
+            <p className="px-3 py-3 text-xs text-dim">Your conversations will appear here.</p>
           ) : (
             <ul className="space-y-1">
               {conversations.map((c) => {
@@ -183,7 +183,7 @@ export function Sidebar({
       {/* ── Knowledge base ─────────────────────────────────────────── */}
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <h2 className="text-[11px] font-semibold tracking-[0.14em] uppercase text-dim">
+          <h2 className="text-xs font-medium text-dim">
             Knowledge base
           </h2>
           <span className="text-[10px] text-dim">{documents.length} docs</span>
@@ -205,7 +205,7 @@ export function Sidebar({
               if (files.length > 0) onFilesSelected(files)
             }}
             className={cn(
-              'flex w-full flex-col items-center gap-1 rounded-xl border border-dashed px-3 py-4 text-xs transition-colors',
+              'flex w-full flex-col items-start gap-1 rounded-md border border-dashed px-3 py-3 text-xs transition-colors',
               dragOver
                 ? 'border-primary bg-primary/10 text-foreground'
                 : 'border-border text-muted-foreground hover:border-primary/60 hover:text-foreground',
@@ -213,8 +213,8 @@ export function Sidebar({
             aria-label="Upload documents: drop files here or click to browse"
           >
             <Upload className="size-4" aria-hidden="true" />
-            <span>Drop PDFs or images here</span>
-            <span className="text-[10px] text-dim">or click to browse</span>
+            <span className="font-medium">Add documents</span>
+            <span className="text-[10px] text-dim">PDF, PNG, JPG, WEBP, BMP or TIFF</span>
           </button>
           <input
             ref={fileInputRef}
@@ -239,7 +239,7 @@ export function Sidebar({
               <Skeleton className="h-11 w-full rounded-lg" />
             </div>
           ) : documents.length === 0 ? (
-            <p className="px-3 py-3 text-xs text-dim">The beast is hungry — feed it some PDFs.</p>
+            <p className="px-3 py-3 text-xs text-dim">Files you add will appear here.</p>
           ) : (
             <ul className="space-y-1">
               {documents.map((doc) => (

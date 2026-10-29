@@ -45,81 +45,81 @@
 
 :root {
   color-scheme: dark;
-  --radius: 0.75rem;
+  --radius: 0.55rem;
 
-  /* ── Midnight Garage palette ─────────────────────────── */
-  --bg: #08090B;
-  --surface: #15171B;
-  --surface-hover: #202329;
-  --border-color: #292D33;
-  --text-primary: #F2F4F7;
-  --text-secondary: #A5ADB8;
-  --accent-red: #C62828;
-  --accent-red-hover: #E03131;
+  /* Warm graphite, with a restrained workshop red. */
+  --bg: #11110F;
+  --surface: #1A1917;
+  --surface-hover: #24221F;
+  --border-color: #35322E;
+  --text-primary: #EAE6DE;
+  --text-secondary: #AAA49A;
+  --accent-red: #B95238;
+  --accent-red-hover: #CC6145;
 
   /* shadcn token mapping */
-  --background: #08090B;
-  --foreground: #F2F4F7;
-  --card: #15171B;
-  --card-foreground: #F2F4F7;
-  --popover: #15171B;
-  --popover-foreground: #F2F4F7;
-  --primary: #C62828;
+  --background: #11110F;
+  --foreground: #EAE6DE;
+  --card: #1A1917;
+  --card-foreground: #EAE6DE;
+  --popover: #1A1917;
+  --popover-foreground: #EAE6DE;
+  --primary: #B95238;
   --primary-foreground: #FFFFFF;
-  --secondary: #202329;
-  --secondary-foreground: #F2F4F7;
-  --muted: #1B1E23;
-  --muted-foreground: #A5ADB8;
-  --accent: #202329;
-  --accent-foreground: #F2F4F7;
-  --destructive: #E03131;
-  --border: #292D33;
-  --input: #292D33;
-  --ring: #F2F4F7;
-  --chart-1: #C62828;
-  --chart-2: #E03131;
-  --chart-3: #A5ADB8;
-  --chart-4: #F2F4F7;
-  --chart-5: #7A1219;
-  --sidebar: #101216;
-  --sidebar-foreground: #F2F4F7;
-  --sidebar-primary: #C62828;
+  --secondary: #24221F;
+  --secondary-foreground: #EAE6DE;
+  --muted: #201F1C;
+  --muted-foreground: #AAA49A;
+  --accent: #24221F;
+  --accent-foreground: #EAE6DE;
+  --destructive: #C85C49;
+  --border: #35322E;
+  --input: #35322E;
+  --ring: #C67A5B;
+  --chart-1: #B95238;
+  --chart-2: #CC6145;
+  --chart-3: #AAA49A;
+  --chart-4: #EAE6DE;
+  --chart-5: #7D3828;
+  --sidebar: #171614;
+  --sidebar-foreground: #EAE6DE;
+  --sidebar-primary: #B95238;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #202329;
-  --sidebar-accent-foreground: #F2F4F7;
-  --sidebar-border: #292D33;
-  --sidebar-ring: #F2F4F7;
+  --sidebar-accent: #24221F;
+  --sidebar-accent-foreground: #EAE6DE;
+  --sidebar-border: #35322E;
+  --sidebar-ring: #C67A5B;
 }
 
 /* Dark-only app: .dark mirrors :root */
 .dark {
   color-scheme: dark;
-  --background: #08090B;
-  --foreground: #F2F4F7;
-  --card: #15171B;
-  --card-foreground: #F2F4F7;
-  --popover: #15171B;
-  --popover-foreground: #F2F4F7;
-  --primary: #C62828;
+  --background: #11110F;
+  --foreground: #EAE6DE;
+  --card: #1A1917;
+  --card-foreground: #EAE6DE;
+  --popover: #1A1917;
+  --popover-foreground: #EAE6DE;
+  --primary: #B95238;
   --primary-foreground: #FFFFFF;
-  --secondary: #202329;
-  --secondary-foreground: #F2F4F7;
-  --muted: #1B1E23;
-  --muted-foreground: #A5ADB8;
-  --accent: #202329;
-  --accent-foreground: #F2F4F7;
-  --destructive: #E03131;
-  --border: #292D33;
-  --input: #292D33;
-  --ring: #F2F4F7;
-  --sidebar: #101216;
-  --sidebar-foreground: #F2F4F7;
-  --sidebar-primary: #C62828;
+  --secondary: #24221F;
+  --secondary-foreground: #EAE6DE;
+  --muted: #201F1C;
+  --muted-foreground: #AAA49A;
+  --accent: #24221F;
+  --accent-foreground: #EAE6DE;
+  --destructive: #C85C49;
+  --border: #35322E;
+  --input: #35322E;
+  --ring: #C67A5B;
+  --sidebar: #171614;
+  --sidebar-foreground: #EAE6DE;
+  --sidebar-primary: #B95238;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #202329;
-  --sidebar-accent-foreground: #F2F4F7;
-  --sidebar-border: #292D33;
-  --sidebar-ring: #F2F4F7;
+  --sidebar-accent: #24221F;
+  --sidebar-accent-foreground: #EAE6DE;
+  --sidebar-border: #35322E;
+  --sidebar-ring: #C67A5B;
 }
 
 @layer base {
@@ -131,19 +131,15 @@
   }
 }
 
-/* ── Glass panels over the photo background ─────────────── */
+/* Solid, quiet surfaces keep the photo background secondary to the work. */
 .glass {
-  background: rgba(21, 23, 27, 0.78);
-  backdrop-filter: blur(14px) saturate(1.1);
-  -webkit-backdrop-filter: blur(14px) saturate(1.1);
-  border: 1px solid rgba(41, 45, 51, 0.9);
+  background: rgba(26, 25, 23, 0.97);
+  border: 1px solid rgba(53, 50, 46, 0.9);
 }
 
 .glass-strong {
-  background: rgba(16, 18, 22, 0.88);
-  backdrop-filter: blur(18px) saturate(1.15);
-  -webkit-backdrop-filter: blur(18px) saturate(1.15);
-  border: 1px solid rgba(41, 45, 51, 0.9);
+  background: rgba(23, 22, 20, 0.98);
+  border: 1px solid rgba(53, 50, 46, 0.9);
 }
 
 .text-dim {
@@ -151,13 +147,13 @@
 }
 
 .bg-overlay {
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(12, 12, 11, 0.76);
 }
 
 /* ── Custom scrollbars ──────────────────────────────────── */
 .nice-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #292d33 transparent;
+  scrollbar-color: #35322e transparent;
 }
 .nice-scroll::-webkit-scrollbar {
   width: 8px;
@@ -167,27 +163,27 @@
   background: transparent;
 }
 .nice-scroll::-webkit-scrollbar-thumb {
-  background-color: #292d33;
+  background-color: #35322e;
   border-radius: 8px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 .nice-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: #3a3f47;
+  background-color: #514b43;
 }
 
 /* ── Chat markdown tweaks ───────────────────────────────── */
 .chat-md code {
-  background: rgba(32, 35, 41, 0.9);
-  border: 1px solid #292d33;
+  background: rgba(36, 34, 31, 0.9);
+  border: 1px solid #35322e;
   border-radius: 6px;
   padding: 0.1rem 0.35rem;
   font-size: 0.85em;
   font-family: var(--font-geist-mono), monospace;
 }
 .chat-md pre {
-  background: rgba(8, 9, 11, 0.85);
-  border: 1px solid #292d33;
+  background: rgba(17, 17, 15, 0.9);
+  border: 1px solid #35322e;
   border-radius: 10px;
   padding: 0.9rem 1rem;
   overflow-x: auto;
@@ -206,15 +202,15 @@
 }
 .chat-md th,
 .chat-md td {
-  border: 1px solid #292d33;
+  border: 1px solid #35322e;
   padding: 0.35rem 0.6rem;
   text-align: left;
 }
 .chat-md th {
-  background: rgba(32, 35, 41, 0.6);
+  background: rgba(36, 34, 31, 0.6);
 }
 .chat-md a {
-  color: #e03131;
+  color: #cc7658;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -229,8 +225,8 @@
   margin: 0.4rem 0;
 }
 .chat-md blockquote {
-  border-left: 3px solid #c62828;
+  border-left: 3px solid #b95238;
   padding-left: 0.8rem;
-  color: #a5adb8;
+  color: #aaa49a;
   margin: 0.5rem 0;
 }

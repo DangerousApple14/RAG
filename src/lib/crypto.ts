@@ -6,13 +6,14 @@ import {
 } from "crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
+import { DATA_DIR } from "@/lib/paths";
 
 /**
  * At-rest encryption for sensitive data (AES-256-GCM).
  *
  * Key management (dev/self-hosted friendly):
  *  1. `APP_SECRET` env var if set (hex/base64/raw utf-8, hashed down to 32 bytes)
- *  2. otherwise auto-generated once into `db/app-secret.key` (chmod 600)
+ *  2. otherwise auto-generated once into `$DATA_DIR/app-secret.key` (chmod 600)
  *
  * Ciphertext format: `enc:v1.<iv>.<tag>.<ct>` (url-safe base64 parts).
  * Anything NOT starting with the prefix is treated as legacy plaintext, so
@@ -24,7 +25,7 @@ import path from "path";
  */
 
 const PREFIX = "enc:v1.";
-const SECRET_FILE = path.join(process.cwd(), "db", "app-secret.key");
+const SECRET_FILE = path.join(DATA_DIR, "app-secret.key");
 const FALLBACK_MSG = "(unreadable — encrypted with a different app secret)";
 
 let cachedKey: Buffer | null = null;

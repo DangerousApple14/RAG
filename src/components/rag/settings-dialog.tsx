@@ -138,7 +138,7 @@ function applyServerSettings(server: Settings): SettingsForm {
   }
 }
 
-/** Glass "Garage settings" dialog — Model | Embeddings | OCR | Account tabs. */
+/** Settings dialog — Model | Embeddings | OCR | Account tabs. */
 export function SettingsDialog({
   open,
   onOpenChange,
@@ -264,7 +264,7 @@ export function SettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-strong nice-scroll max-h-[88vh] overflow-y-auto rounded-xl sm:max-w-lg">
+      <DialogContent className="glass-strong nice-scroll max-h-[88vh] overflow-y-auto rounded-md sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Garage settings</DialogTitle>
           <DialogDescription>
@@ -681,7 +681,7 @@ export function SettingsDialog({
                     Delete account forever
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent className="glass-strong rounded-xl">
+                <AlertDialogContent className="glass-strong rounded-md">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete your account?</AlertDialogTitle>
                     <AlertDialogDescription>

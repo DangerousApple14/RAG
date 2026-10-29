@@ -153,3 +153,23 @@ Stage Summary:
 - Browser E2E verified: register w/ ToS gate, legal viewer tabs, masked key save/keep, chat stream + encrypted round-trip, wrong-password 403, account erase 200 -> auth screen, 429 rate limit live
 - DB inspection: message/title/apiKey rows = enc:v1.…; GET responses contain no raw keys
 - NOTE: register rate limit 5/10min may 429 during heavy testing — restart dev server to reset buckets
+
+---
+
+## Task ID: deploy-1 — Render/Docker deployment prep (user zip sync + prod hardening)
+
+Date: 2025-10-29
+
+**Synced** user's RAG.zip (authoritative "everything fixed" state: security layer, ToS, standalone output, langchain deps) into the project. Installed 4 missing packages (katex, remark-gfm, remark-math, rehype-katex).
+
+**Deployment fixes:**
+- NEW `src/lib/paths.ts` — `DATA_DIR` env override for all mutable data (secret keys, db/vectors). Wired into crypto.ts, auth.ts, vector-store.ts, api/account. On Render: `DATA_DIR=/var/data` keeps keys/indexes on the persistent disk; default stays `<cwd>/db` for local dev.
+- REWRITTEN `Dockerfile` — was node:20-alpine (musl breaks onnxruntime-node) + bun-only start + baked-in relative DATABASE_URL + no .dockerignore (would have shipped .env, db secrets, .git to Docker Hub!). Now: multi-stage node:20-bookworm-slim, libgomp1+ca-certificates, standalone output, PORT/HOSTNAME envs, boot step `mkdir -p $DATA_DIR && prisma db push && exec node .next/standalone/server.js`.
+- NEW `.dockerignore` (secrets/user data excluded), `.env.example`, `render.yaml` (image runtime, persistent disk /var/data, APP_SECRET generateValue, health check), `DEPLOY.md` (full build/push/Render walkthrough).
+- NEW `GET /api/health` — unauthenticated liveness probe for Render.
+- package.json: `start` now `node .next/standalone/server.js` (was bun-only; broke the old Dockerfile CMD); bun variant kept as `start:bun`.
+- .gitignore: added /db/, /prisma/db/, /data/, *.key (secret keys + SQLite were committable before).
+
+**Verified:** lint clean; / 200, /api/health 200, auth-guarded routes 401 unauth; browser E2E — register with ToS checkbox ✓, chat round-trip (built-in LLM, 200 in 4s, markdown+KaTeX render) ✓, Terms/Privacy dialogs ✓, mobile viewport ✓, footer sticky ✓. No docker daemon in sandbox → Dockerfile validated statically (glibc/libgomp/standalone/prisma boot flow).
+
+**User next steps:** `docker build --platform linux/amd64 -t applepieee/rag_demo:latest .` → `docker login -u applepieee` → `docker push …` → Render "Existing image" + env vars (DATABASE_URL=file:/var/data/custom.db, DATA_DIR=/var/data, APP_SECRET) + 1GB disk at /var/data + health path /api/health. See DEPLOY.md.

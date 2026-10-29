@@ -2,6 +2,7 @@ import "server-only";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "fs";
 import path from "path";
 import { encryptText, decryptText } from "@/lib/crypto";
+import { VECTORS_DIR } from "@/lib/paths";
 
 /**
  * Minimal, dependency-free vector index persisted as JSON per user.
@@ -26,8 +27,6 @@ type StoreData = {
   embedMeta: EmbedMeta | null;
   items: VectorItem[];
 };
-
-const VECTORS_DIR = path.join(process.cwd(), "db", "vectors");
 
 function filePath(userId: string) {
   return path.join(VECTORS_DIR, `${userId}.json`);
@@ -114,23 +113,100 @@ function cosine(a: number[], b: number[]): number {
   return dot / (Math.sqrt(na) * Math.sqrt(nb));
 }
 
+const SEARCH_STOP_WORDS = new Set([
+  "a",
+  "about",
+  "all",
+  "an",
+  "and",
+  "are",
+  "can",
+  "could",
+  "document",
+  "file",
+  "for",
+  "from",
+  "give",
+  "in",
+  "into",
+  "it",
+  "me",
+  "of",
+  "on",
+  "please",
+  "pdf",
+  "show",
+  "some",
+  "summarize",
+  "summary",
+  "the",
+  "this",
+  "to",
+  "with",
+  "riassumi",
+  "riassunto",
+  "documento",
+  "per",
+  "del",
+  "della",
+  "di",
+  "il",
+  "lo",
+  "la",
+  "un",
+  "una",
+]);
+
+function searchTerms(text: string): Set<string> {
+  return new Set(
+    (text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).filter(
+      (term) => term.length > 1 && !SEARCH_STOP_WORDS.has(term)
+    )
+  );
+}
+
+function termOverlap(queryTerms: Set<string>, text: string): number {
+  if (queryTerms.size === 0) return 0;
+  const textTerms = searchTerms(text);
+  let matches = 0;
+  for (const term of queryTerms) {
+    if (textTerms.has(term)) matches++;
+  }
+  return matches / queryTerms.size;
+}
+
 export type SearchHit = { docId: string; docName: string; page: number; score: number; text: string };
 
 export function search(
   userId: string,
   queryVector: number[],
   k = 6,
-  minScore = 0.25
+  minScore = 0.25,
+  queryText = ""
 ): { hits: SearchHit[]; total: number } {
   const data = load(userId);
   if (data.items.length === 0) return { hits: [], total: 0 };
-  const scored = data.items
-    .map((item) => ({ item, score: cosine(queryVector, item.vector) }))
-    .filter((s) => s.score >= minScore)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, k);
+  const queryTerms = searchTerms(queryText);
+  const scored = data.items.map((item) => ({
+    item,
+    score: cosine(queryVector, item.vector),
+    textMatch: termOverlap(queryTerms, item.text),
+    nameMatch: termOverlap(queryTerms, item.meta.docName),
+  }));
+  const filenameMatches = scored.filter((entry) => entry.nameMatch > 0);
+  const semanticMatches = scored.filter((entry) => entry.score >= minScore);
+  const lexicalMatches = scored.filter((entry) => entry.textMatch > 0);
+  const results =
+    filenameMatches.length > 0
+      ? filenameMatches.sort((a, b) => b.nameMatch - a.nameMatch || b.score - a.score)
+      : semanticMatches.length > 0
+        ? semanticMatches.sort((a, b) => b.score - a.score)
+        : lexicalMatches.length > 0
+          ? lexicalMatches.sort((a, b) => b.textMatch - a.textMatch || b.score - a.score)
+          : scored.sort((a, b) => b.score - a.score);
+  const selected = results.slice(0, k);
   return {
-    hits: scored.map(({ item, score }) => ({
+    hits: selected.map(({ item, score }) => ({
       docId: item.docId,
       docName: item.meta.docName,
       page: item.meta.page,

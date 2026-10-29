@@ -488,7 +488,7 @@ export function AppRoot() {
         )
       ) : (
         <div className="flex min-h-svh flex-col">
-          <header className="glass-strong sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 px-3 sm:px-4">
+          <header className="glass-strong sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-x-0 border-t-0 px-3 sm:px-5">
             <Button
               variant="ghost"
               size="icon"
@@ -501,14 +501,14 @@ export function AppRoot() {
             </Button>
 
             <div className="flex min-w-0 items-center gap-2.5">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md shadow-primary/30">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <Car className="size-4" aria-hidden="true" />
               </div>
               <div className="min-w-0 leading-tight">
-                <p className="truncate text-sm font-bold tracking-[0.18em]">
+                <p className="truncate text-[13px] font-semibold tracking-[0.1em]">
                   MIDNIGHT <span className="text-primary">GARAGE</span>
                 </p>
-                <p className="truncate text-[10px] tracking-wider text-dim">local RAG workbench</p>
+                <p className="truncate text-[10px] text-dim">Private document workspace</p>
               </div>
             </div>
 
@@ -531,7 +531,7 @@ export function AppRoot() {
               >
                 <SettingsIcon className="size-4" aria-hidden="true" />
               </Button>
-              <span className="ml-1 hidden items-center gap-1.5 rounded-full border px-3 py-1 text-xs text-dim sm:inline-flex">
+              <span className="ml-1 hidden items-center gap-1.5 border-l border-border pl-3 text-xs text-dim sm:inline-flex">
                 <UserIcon className="size-3.5" aria-hidden="true" />
                 {user.username}
               </span>
@@ -559,11 +559,10 @@ export function AppRoot() {
             />
           </main>
 
-          <footer className="glass-strong mt-auto shrink-0 border-t border-border/70 px-4 py-2 text-center text-[11px] text-dim">
+          <footer className="glass-strong mt-auto shrink-0 border-x-0 border-b-0 px-4 py-2 text-center text-[11px] text-dim">
             <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
               <span>
-                Midnight Garage · local-first RAG — PDFs, OCR &amp; LLM keys never leave this
-                machine
+                Midnight Garage · document search, OCR &amp; source references
               </span>
               <span aria-hidden="true">·</span>
               <button
@@ -586,7 +585,7 @@ export function AppRoot() {
 
           {/* Mobile sidebar drawer */}
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetContent side="left" className="glass-strong w-80 gap-0 p-0">
+            <SheetContent side="left" className="glass-strong w-80 gap-0 rounded-none border-y-0 border-l-0 p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <SheetDescription className="sr-only">Chats and knowledge base</SheetDescription>
               <Sidebar

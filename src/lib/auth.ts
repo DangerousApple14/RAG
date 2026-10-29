@@ -6,10 +6,11 @@ import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { db } from "@/lib/db";
+import { DATA_DIR } from "@/lib/paths";
 
 const SESSION_COOKIE = "rag_session";
 const SESSION_DAYS = 30;
-const SECRET_FILE = path.join(process.cwd(), "db", "auth-secret.key");
+const SECRET_FILE = path.join(DATA_DIR, "auth-secret.key");
 
 let cachedSecret: Uint8Array | null = null;
 
