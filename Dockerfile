@@ -1,17 +1,10 @@
 # ─────────────────────────────────────────────────────────────────
 # Multi-stage build for Render (amd64) / Docker Hub / any host.
-#
-# IMPORTANT (Apple Silicon users): build with
-#     docker build --platform linux/amd64 -t applepieee/rag_demo:latest .
-# Render runs amd64 — without the flag an M-series Mac builds an arm64
-# image that will NOT start on Render.
-#
-# WHY debian (bookworm-slim) and NOT alpine:
-#   onnxruntime-node (PaddleOCR) ships glibc-only prebuilt binaries and
-#   needs libgomp1 — both break on Alpine/musl.
+# Apple Silicon: keep the --platform linux/amd64 flag on docker build!
+# WHY debian and NOT alpine: onnxruntime-node (PaddleOCR) is glibc-only.
 # ─────────────────────────────────────────────────────────────────
 
-# ── Stage 1: build (needs devDependencies: typescript, tailwind) ──
+# ── Stage 1: build ────────────────────────────────────────────────
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -25,12 +18,19 @@ COPY . .
 ENV DATABASE_URL="file:/tmp/build.db"
 RUN npx prisma generate && npm run build
 
-# ── Stage 2: production-only dependencies (for `prisma db push` at
-#    boot + native packages that must resolve from /app/node_modules) ──
+# ── Stage 2: production-only deps (prisma db push at boot + natives) ──
 FROM node:20-bookworm-slim AS proddeps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
+# CRITICAL: generate the real Prisma client in this tree too.
+# @prisma/client's postinstall skips generate when no schema is present,
+# leaving a STUB here — and if the standalone server's runtime resolution
+# falls back to /app/node_modules for the engine, every DB query 500s with
+# "@prisma/client did not initialize yet". Standalone's traced copy is
+# generated in the build stage; this makes the fallback fully functional.
+COPY prisma ./prisma
+RUN npx prisma generate
 
 # ── Stage 3: runner ───────────────────────────────────────────────
 FROM node:20-bookworm-slim AS runner
