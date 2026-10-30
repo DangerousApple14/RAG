@@ -1,10 +1,12 @@
 # ─────────────────────────────────────────────────────────────────
 # Multi-stage build for Render (amd64) / Docker Hub / any host.
-# Apple Silicon: keep the --platform linux/amd64 flag on docker build!
-# WHY debian and NOT alpine: onnxruntime-node (PaddleOCR) is glibc-only.
+#
+# WHY debian (bookworm-slim) and NOT alpine:
+#   onnxruntime-node (PaddleOCR) ships glibc-only prebuilt binaries and
+#   needs libgomp1 — both break on Alpine/musl.
 # ─────────────────────────────────────────────────────────────────
 
-# ── Stage 1: build ────────────────────────────────────────────────
+# ── Stage 1: build (needs devDependencies: typescript, tailwind) ──
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -18,7 +20,8 @@ COPY . .
 ENV DATABASE_URL="file:/tmp/build.db"
 RUN npx prisma generate && npm run build
 
-# ── Stage 2: production-only deps (prisma db push at boot + natives) ──
+# ── Stage 2: production-only dependencies (for `prisma db push` at
+#    boot + native packages that must resolve from /app/node_modules) ──
 FROM node:20-bookworm-slim AS proddeps
 WORKDIR /app
 COPY package.json package-lock.json ./
