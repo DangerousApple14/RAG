@@ -1,6 +1,8 @@
 # Deploying RAG to Render (Docker image)
 
 Two-part flow: build & push the image locally → wire it up on Render.
+The Docker image uses Node 22 because the PDF parser (`pdfjs-dist` 6) needs
+`Promise.withResolvers`, which is not available in Node 20.
 
 ---
 

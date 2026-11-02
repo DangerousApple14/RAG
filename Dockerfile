@@ -7,7 +7,8 @@
 # ─────────────────────────────────────────────────────────────────
 
 # ── Stage 1: build (needs devDependencies: typescript, tailwind) ──
-FROM node:20-bookworm-slim AS build
+# pdfjs-dist 6 requires Node 22.13+ (Promise.withResolvers).
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -22,7 +23,7 @@ RUN npx prisma generate && npm run build
 
 # ── Stage 2: production-only dependencies (for `prisma db push` at
 #    boot + native packages that must resolve from /app/node_modules) ──
-FROM node:20-bookworm-slim AS proddeps
+FROM node:22-bookworm-slim AS proddeps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
@@ -36,7 +37,7 @@ COPY prisma ./prisma
 RUN npx prisma generate
 
 # ── Stage 3: runner ───────────────────────────────────────────────
-FROM node:20-bookworm-slim AS runner
+FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 
 # libgomp1: OpenMP runtime required by onnxruntime (PaddleOCR).
