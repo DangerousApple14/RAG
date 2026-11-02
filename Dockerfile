@@ -57,6 +57,9 @@ ENV NODE_ENV=production \
 COPY --from=build /app/.next/standalone ./.next/standalone
 COPY --from=build /app/.next/static ./.next/standalone/.next/static
 COPY --from=build /app/public ./.next/standalone/public
+# pdfjs-dist is externalized by Next, but its worker and font assets are not
+# reliably included in the standalone trace. Keep them beside the server copy.
+COPY --from=proddeps /app/node_modules/pdfjs-dist ./.next/standalone/node_modules/pdfjs-dist
 
 # full prod node_modules + prisma schema so the boot step can run
 # `prisma db push` and native deps (onnxruntime, pdfjs fonts) resolve
